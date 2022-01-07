@@ -10,7 +10,7 @@ from torchvision import transforms as kit
 from functools import partial
 
 constant = {
-    'image folder' : "./resource/flickr/jpg/",
+    'image folder' : "./resource/flickr-sample/jpg/",
     'image size'   : (126, 126)
 }
 

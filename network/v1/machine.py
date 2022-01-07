@@ -7,7 +7,8 @@ import numpy
 import pickle
 import pandas
 import plotly.graph_objects as go
-
+import nltk
+# nltk.translate.gleu_score.sentence_gleu(references=[['hello', "world"]], hypothesis=['hello', 'hi', "world"], min_len=1, max_len=None)
 
 track = {
     "epoch":[],
@@ -96,71 +97,55 @@ class machine:
         self.track['validation loss'] += [numpy.array(iteration['validation loss']).mean()]
         return
 
+    def evaluate(self, loader, name):
 
-
-    # def evaluate(self, train=None, validation=None):
-
-    #     ################################################################################
-    #     ##  On train.
-    #     ################################################################################
-    #     self.model = self.model.to(self.device)
-    #     self.model.eval()
-    #     pass
+        self.model = self.model.to(self.device)
+        self.model.eval()
+        pass
         
-    #     record  = {'train edit distance' : []}
-    #     progress = tqdm.tqdm(train, leave=False)
-    #     for batch in progress:
+        iteration  = {'image':[], 'text':[], 'description':[], 'target':[], 'prediction':[], 'gleu score':[]}
+        progress = tqdm.tqdm(loader, leave=False)
+        for batch in progress:
 
-    #         with torch.no_grad():
+            for b in range(batch['size']):
+
+                with torch.no_grad():
+
+                    v = dict()
+                    v['image'] = batch['image'][b:b+1,:, :, :].to(self.device)
+                    v['text'] = self.model.vocabulary.decode(
+                        token = batch['text'][:,b].tolist(),
+                        text=False
+                    )
+                    v['target'] = list(filter((self.model.vocabulary.index['<padding>']).__ne__, v['text']))
+                    v['prediction'] = self.model.vocabulary.decode(
+                        token = self.model.predict(x=v['image'], device=self.device, limit=20), 
+                        text=False
+                    )
+                    v['description'] = " ".join(v['prediction'])
+                    v['gleu score'] = nltk.translate.gleu_score.sentence_gleu(
+                        references=[v['prediction']], 
+                        hypothesis=v['target'], 
+                        min_len=1, 
+                        max_len=None
+                    )
+                    iteration['image'] += [batch['item']['image'][b]]
+                    iteration['text'] += [batch['item']['text'][b]]
+                    iteration['target'] += [v['target']]
+                    iteration['prediction'] += [v['prediction']]
+                    iteration['description'] += [v['description']]
+                    iteration['gleu score'] += [v['gleu score']]
+                    pass
                 
-    #             value = {}
-    #             value['image'] = batch['image'].to(self.device)
-    #             value['text']  = batch['text'].to(self.device)
-    #             for i in range(batch['size']):
+                pass
 
-    #                 prediction = self.model.autoregressive(image=batch['image'][i:i+1,:,:,:], device=self.device, limit=20)
-    #                 prediction = self.model.vocabulary.reverse(x=prediction)
-    #                 target = batch['item'].iloc[i]["text"]
-    #                 record['train edit distance'] += [editdistance.eval(prediction, target)]
-    #                 pass
-
-    #             pass
-            
-    #         pass
-
-    #     self.history['train edit distance'] += [numpy.array(record['train edit distance']).mean()]
-    #     pass
-    
-    #     ################################################################################
-    #     ##  On validation.
-    #     ################################################################################
-    #     self.model = self.model.to(self.device)
-    #     self.model.eval()
-    #     pass
+            pass
         
-    #     record  = {'validation edit distance' : []}
-    #     progress = tqdm.tqdm(validation, leave=False)
-    #     for batch in progress:
-
-    #         with torch.no_grad():
-                
-    #             value = {}
-    #             value['image'] = batch['image'].to(self.device)
-    #             value['text']  = batch['text'].to(self.device)
-    #             for i in range(batch['size']):
-
-    #                 prediction = self.model.autoregressive(image=batch['image'][i:i+1,:,:,:], device=self.device, limit=20)
-    #                 prediction = self.model.vocabulary.reverse(x=prediction)
-    #                 target = batch['item'].iloc[i]["text"]
-    #                 record['validation edit distance'] += [editdistance.eval(prediction, target)]
-    #                 pass
-
-    #             pass
-            
-    #         pass
-
-    #     self.history['validation edit distance'] += [numpy.array(record['validation edit distance']).mean()]
-    #     return
+        self.evaluation = iteration
+        with open(os.path.join(self.folder, name+'.pkl'), 'wb') as paper: pickle.dump(self.evaluation, paper)
+        mean = numpy.mean(self.evaluation['gleu score'])
+        print('mean of gleu score {}'.format(mean))
+        return
 
     def save(self, what='checkpoint'):
 
@@ -231,3 +216,68 @@ class machine:
 
 
 
+
+
+    # def evaluate(self, train=None, validation=None):
+
+    #     ################################################################################
+    #     ##  On train.
+    #     ################################################################################
+    #     self.model = self.model.to(self.device)
+    #     self.model.eval()
+    #     pass
+        
+    #     record  = {'train edit distance' : []}
+    #     progress = tqdm.tqdm(train, leave=False)
+    #     for batch in progress:
+
+    #         with torch.no_grad():
+                
+    #             value = {}
+    #             value['image'] = batch['image'].to(self.device)
+    #             value['text']  = batch['text'].to(self.device)
+    #             for i in range(batch['size']):
+
+    #                 prediction = self.model.autoregressive(image=batch['image'][i:i+1,:,:,:], device=self.device, limit=20)
+    #                 prediction = self.model.vocabulary.reverse(x=prediction)
+    #                 target = batch['item'].iloc[i]["text"]
+    #                 record['train edit distance'] += [editdistance.eval(prediction, target)]
+    #                 pass
+
+    #             pass
+            
+    #         pass
+
+    #     self.history['train edit distance'] += [numpy.array(record['train edit distance']).mean()]
+    #     pass
+    
+    #     ################################################################################
+    #     ##  On validation.
+    #     ################################################################################
+    #     self.model = self.model.to(self.device)
+    #     self.model.eval()
+    #     pass
+        
+    #     record  = {'validation edit distance' : []}
+    #     progress = tqdm.tqdm(validation, leave=False)
+    #     for batch in progress:
+
+    #         with torch.no_grad():
+                
+    #             value = {}
+    #             value['image'] = batch['image'].to(self.device)
+    #             value['text']  = batch['text'].to(self.device)
+    #             for i in range(batch['size']):
+
+    #                 prediction = self.model.autoregressive(image=batch['image'][i:i+1,:,:,:], device=self.device, limit=20)
+    #                 prediction = self.model.vocabulary.reverse(x=prediction)
+    #                 target = batch['item'].iloc[i]["text"]
+    #                 record['validation edit distance'] += [editdistance.eval(prediction, target)]
+    #                 pass
+
+    #             pass
+            
+    #         pass
+
+    #     self.history['validation edit distance'] += [numpy.array(record['validation edit distance']).mean()]
+    #     return

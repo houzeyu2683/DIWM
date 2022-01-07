@@ -202,29 +202,29 @@ class model(nn.Module):
         y = self.layer(x=(picture, description))
         return(y)
 
-    # def predict(self, image=None, device='cpu', limit=20):
+    def predict(self, x='image', device='cpu', limit=20):
 
-    #     self.layer = self.layer.to(device)
-    #     image = image.to(device)
-    #     if(len(image)!=1): return("the image dimension need (1, 3, 224, 224) shape")
-    #     generation = torch.full((1, 1), self.vocabulary.index['<start>'], dtype=torch.long).to(device)
-    #     value = {}
-    #     for _ in range(limit-1):
+        self.layer = self.layer.to(device)
+        x = x.to(device)
+        if(len(x)!=1): return("the image dimension need (1, channel, heigh, width) shape")
+        generation = torch.full((1, 1), self.vocabulary.index['<start>'], dtype=torch.long).to(device)
+        v = dict()
+        for _ in range(limit-1):
             
-    #         with torch.no_grad():
+            with torch.no_grad():
 
-    #             value['next probability'] = self.layer(image=image, text=generation)[-1,:,:]
-    #             value['next prediction']  = value['next probability'].argmax(axis=1).view((1,1))
-    #             generation = torch.cat([generation, value['next prediction']], dim=0)
-    #             if(value['next prediction'] == self.vocabulary.index['<end>']): break
-    #             pass
+                v['next probability'] = self.layer(x=(x, generation))[-1,:,:]
+                v['next prediction']  = v['next probability'].argmax(axis=1).view((1,1))
+                generation = torch.cat([generation, v['next prediction']], dim=0)
+                if(v['next prediction'] == self.vocabulary.index['<end>']): break
+                pass
 
-    #         pass
+            pass
 
-    #     y = list(generation.view(-1).cpu().numpy())
-    #     return(y)
+        y = list(generation.view(-1).cpu().numpy())
+        return(y)
     
-    # pass
+    pass
 
 
 def cost(skip=None):
