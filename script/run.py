@@ -18,13 +18,13 @@ next(iter(loader.train))
 
 import network
  
-model = network.v1.model(vocabulary=vocabulary)
+model = network.v2.model(vocabulary=vocabulary)
 x = next(iter(loader.train))['image'], next(iter(loader.train))['text']
 model.forward(x=x).shape
 
-cost = network.v1.cost(skip=vocabulary.index['<padding>'])
+cost = network.v2.cost(skip=vocabulary.index['<padding>'])
 optimizer = network.v1.optimizer(model=model)
-machine = network.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v1)/', checkpoint=0)
+machine = network.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v2)/', checkpoint=0)
 
 epoch = 10
 for e in range(epoch):

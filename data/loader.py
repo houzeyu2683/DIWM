@@ -10,8 +10,8 @@ from torchvision import transforms as kit
 from functools import partial
 
 constant = {
-    'image folder' : "./resource/flickr/jpg/",
-    'image size'   : (126, 126)
+    'image folder' : "./resource/flickr-sample/jpg/",
+    'image size'   : (224, 224)
 }
 
 class loader:
@@ -45,16 +45,6 @@ class loader:
             )
             pass
 
-        # ##  Test loader.
-        # if(name=='test'):
-
-        #     self.test = DataLoader(
-        #         dataset=dataset, batch_size=self.batch, 
-        #         shuffle=False , drop_last=False, 
-        #         collate_fn=partial(self.collect, mode='test')
-        #     )
-        #     pass
-        
         return
 
     def collect(self, group, mode):
@@ -96,7 +86,7 @@ class process:
 
         path = os.path.join(constant['image folder'], self.item['image'])
         picture = PIL.Image.open(path).convert("RGB")
-        picture = zoom(picture, 200)
+        picture = zoom(picture, 256)
         if(self.mode=='train'):
             
             blueprint = [
@@ -141,59 +131,4 @@ def zoom(picture=None, boundary=None):
     height, width = size[0]*scale, size[1]*scale
     picture = picture.resize((height, width))
     return(picture)
-
-# class loader:
-
-#     def __init__(self, train=None, validation=None, test=None, batch=32, vocabulary=None):
-
-#         ##  Vocabulary.
-#         self.vocabulary = vocabulary
-        
-#         ##  Train loader.
-#         self.train = DataLoader(
-#             dataset=train, batch_size=batch, 
-#             shuffle=True , drop_last=True, 
-#             collate_fn=partial(self.collect, mode='train')
-#         ) if(train) else None
-        
-#         ##  Validation loader.
-#         self.validation = DataLoader(
-#             dataset=validation, batch_size=batch, 
-#             shuffle=False , drop_last=False, 
-#             collate_fn=partial(self.collect, mode='validation')
-#         ) if(validation) else None
-
-#         ##  Test loader.
-#         self.test = DataLoader(
-#             dataset=test, batch_size=batch, 
-#             shuffle=False , drop_last=False, 
-#             collate_fn=partial(self.collect, mode='test')
-#         ) if(test) else None
-#         pass
-
-#     def collect(self, group, mode):
-        
-#         batch = {
-#             'size'  : None,
-#             'length': None,
-#             'item'  : [],
-#             'image' : [],
-#             'text'  : []
-#         }
-#         for item in group:
-            
-#             engine = process(item=item, vocabulary=self.vocabulary, mode=mode)
-#             batch['item'] += [engine.item]
-#             batch['image'] += [engine.image()]
-#             batch['text'] += [engine.text()]
-#             pass
-
-#         batch['item']   = pandas.concat(batch['item'],axis=1).transpose()
-#         batch['image']  = torch.stack(batch['image'], 0)
-#         batch['text']   = rnn.pad_sequence(batch['text'], batch_first=False, padding_value=self.vocabulary.index['<padding>'])
-#         batch['size']   = len(group)
-#         batch['length'] = len(batch['text'])
-#         return(batch)
-    
-#     pass
 
