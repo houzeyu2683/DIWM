@@ -107,17 +107,19 @@ class machine:
         progress = tqdm.tqdm(loader, leave=False)
         for batch in progress:
 
+            batch['item'] = batch['item'].reset_index(drop=True)
+
             for b in range(batch['size']):
 
                 with torch.no_grad():
-
+                    
                     v = dict()
                     v['image'] = batch['image'][b:b+1,:, :, :].to(self.device)
                     v['text'] = self.model.vocabulary.decode(
                         token = batch['text'][:,b].tolist(),
                         text=False
                     )
-                    v['target'] = list(filter((self.model.vocabulary.index['<padding>']).__ne__, v['text']))
+                    v['target'] = list(filter(('<padding>').__ne__, v['text']))
                     v['prediction'] = self.model.vocabulary.decode(
                         token = self.model.predict(x=v['image'], device=self.device, limit=20), 
                         text=False
