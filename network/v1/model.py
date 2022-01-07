@@ -49,14 +49,14 @@ class picture(nn.Module):
 
             continue
         
-        p = torch.concat(p, axis=0)
+        p = torch.cat(p, axis=0)
         p = p.flatten(2)
         'the shape of [p] is (length, batch, embedding)'
         pass
 
         i = []
         for _ in range(p.shape[1]): i += [torch.arange(start=0, end=len(p), step=1).unsqueeze(dim=1)]
-        i = torch.concat(i, dim=1)
+        i = torch.cat(i, dim=1)
         i = i.cuda() if(p.is_cuda) else i.cpu()
         'the shape of [i] is (length, batch)'
         pass
