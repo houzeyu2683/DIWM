@@ -11,7 +11,7 @@ from functools import partial
 
 constant = {
     'image folder' : "./resource/flickr-sample/jpg/",
-    'image size'   : (224, 224)
+    'image size'   : (126, 126)
 }
 
 class loader:
@@ -35,25 +35,25 @@ class loader:
             )
             pass
         
-        # ##  Validation loader.
-        # if(name=='validation'):
+        ##  Validation loader.
+        if(name=='validation'):
 
-        #     self.validation = DataLoader(
-        #         dataset=dataset, batch_size=self.batch, 
-        #         shuffle=False , drop_last=False, 
-        #         collate_fn=partial(self.collect, mode='validation')
-        #     )
-        #     pass
-
-        ##  Test loader.
-        if(name=='test'):
-
-            self.test = DataLoader(
+            self.validation = DataLoader(
                 dataset=dataset, batch_size=self.batch, 
                 shuffle=False , drop_last=False, 
-                collate_fn=partial(self.collect, mode='test')
+                collate_fn=partial(self.collect, mode='validation')
             )
             pass
+
+        # ##  Test loader.
+        # if(name=='test'):
+
+        #     self.test = DataLoader(
+        #         dataset=dataset, batch_size=self.batch, 
+        #         shuffle=False , drop_last=False, 
+        #         collate_fn=partial(self.collect, mode='test')
+        #     )
+        #     pass
         
         return
 
@@ -96,7 +96,7 @@ class process:
 
         path = os.path.join(constant['image folder'], self.item['image'])
         picture = PIL.Image.open(path).convert("RGB")
-        picture = zoom(picture, 300)
+        picture = zoom(picture, 200)
         if(self.mode=='train'):
             
             blueprint = [

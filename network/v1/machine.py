@@ -7,11 +7,18 @@ import numpy
 import pickle
 import pandas
 import plotly.graph_objects as go
-import random
+
+
+track = {
+    "epoch":[],
+    'train loss':[],
+    "validation loss": []
+}
+
 
 class machine:
 
-    def __init__(self, model=None, optimizer=None, cost=None, device='cpu', folder='LOG', checkpoint=0):
+    def __init__(self, model=None, optimizer=None, cost=None, device='cpu', folder='log', checkpoint=0):
 
         self.model      = model
         self.optimizer  = optimizer
@@ -21,14 +28,13 @@ class machine:
         self.checkpoint = checkpoint
         pass
         
-        # self.history = {'epoch':[], 'train loss':[], 'validation loss':[], "train edit distance":[], "validation edit distance":[]}
-        self.history = {'epoch':[], 'train loss':[], 'validation loss':[]}
+        self.track = track
         os.makedirs(self.folder, exist_ok=True) if(self.folder) else None
         pass
 
     def learn(self, train=None, validation=None):
 
-        self.history['epoch'] += [self.checkpoint]
+        self.track['epoch'] += [self.checkpoint]
         pass
 
         ################################################################################
@@ -38,29 +44,26 @@ class machine:
         self.model.train()
         pass
         
-        record  = {'train loss' : []}
+        iteration  = {'train loss':[]}
         progress = tqdm.tqdm(train, leave=False)
         for batch in progress:
 
             self.model.zero_grad()
-            value = {}
-            value['image'] = batch['image'].to(self.device)
-            value['text']  = batch['text'].to(self.device)
-            value['score']  = self.model(
-                image=value['image'], 
-                text=value['text'][:-1,:], 
+            v = dict()
+            v['image'] = batch['image'].to(self.device)
+            v['text']  = batch['text'].to(self.device)
+            v['score']  = self.model(
+                x = (v['image'], v['text'][:-1,:]),
                 device=self.device
             )
-            loss = self.cost(value["score"].flatten(0,1), value['text'][1:,:].flatten())
-            # loss = self.cost(value["score"].flatten(0,1), value['text'].flatten())
+            loss = self.cost(v["score"].flatten(0,1), v['text'][1:,:].flatten())
             loss.backward()
             self.optimizer.step()
-            value['loss'] = loss.item()
-            progress.set_description("train loss : {}".format(value['loss']))
-            record['train loss'] += [value['loss']]
+            iteration['train loss'] += [loss.item()]
+            progress.set_description("train loss : {}".format(iteration['train loss'][-1]))
             pass
         
-        self.history['train loss'] += [numpy.array(record['train loss']).mean()]
+        self.track['train loss'] += [numpy.array(iteration['train loss']).mean()]
         pass
 
         ################################################################################
@@ -70,30 +73,27 @@ class machine:
         self.model.eval()
         pass
         
-        record  = {'validation loss' : []}
+        iteration  = {'validation loss':[]}
         progress = tqdm.tqdm(validation, leave=False)
         for batch in progress:
 
             with torch.no_grad():
-                
-                value = {}
-                value['image'] = batch['image'].to(self.device)
-                value['text']  = batch['text'].to(self.device)
-                value['score']  = self.model(
-                    image=value['image'], 
-                    text=value['text'][:-1,:], 
+
+                v = dict()
+                v['image'] = batch['image'].to(self.device)
+                v['text']  = batch['text'].to(self.device)
+                v['score']  = self.model(
+                    x = (v['image'], v['text'][:-1,:]),
                     device=self.device
                 )
-                loss = self.cost(value["score"].flatten(0,1), value['text'][1:,:].flatten())
-                # loss = self.cost(value["score"].flatten(0,1), value['text'].flatten())
-                value['loss'] = loss.item()
-                progress.set_description("validation loss : {}".format(value['loss']))
-                record['validation loss'] += [value['loss']]
+                loss = self.cost(v["score"].flatten(0,1), v['text'][1:,:].flatten())
+                iteration['validation loss'] += [loss.item()]
+                progress.set_description("validation loss : {}".format(iteration['validation loss'][-1]))
                 pass
             
-            pass
+            continue
 
-        self.history['validation loss'] += [numpy.array(record['validation loss']).mean()]
+        self.track['validation loss'] += [numpy.array(iteration['validation loss']).mean()]
         return
 
 
@@ -178,16 +178,18 @@ class machine:
 
         if(what=='history'):
 
-            path = os.path.join(self.folder, "history.csv")
-            pandas.DataFrame(self.history).to_csv(path, index=False)
-            print("save the history of model to {}".format(path))
+            history = pandas.DataFrame(self.track)
+            history.to_csv(
+                os.path.join(self.folder, "history.csv"), 
+                index=False
+            )
             pass
 
-            path = os.path.join(self.folder, "history.html")
+            # path = os.path.join(self.folder, "history.html")
             figure = go.Figure()
             figure.add_trace(
                 go.Scatter(
-                    x=self.history['epoch'], y=self.history['train loss'],
+                    x=history['epoch'], y=history['train loss'],
                     mode='lines+markers',
                     name='train loss',
                     line_color="blue"
@@ -195,13 +197,13 @@ class machine:
             )
             figure.add_trace(
                 go.Scatter(
-                    x=self.history['epoch'], y=self.history['validation loss'],
+                    x=history['epoch'], y=history['validation loss'],
                     mode='lines+markers',
                     name='validation loss',
                     line_color="green"
                 )
             )
-            figure.write_html(path)
+            figure.write_html(os.path.join(self.folder, "history.html"))
             pass
 
         return

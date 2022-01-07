@@ -1,158 +1,164 @@
 
+
 import torch
 import torchvision
 from torch import nn
+import math 
 
-constant = {
-    'image embedding size':256,
-    'text embedding size':256
-}
 
-class image(nn.Module):
+##  影像輸入神經網路模組。
+class picture(nn.Module):
 
     def __init__(self):
 
-        super(image, self).__init__()
-        model = torchvision.models.resnet34(True)
-        self.layer = nn.Sequential(
-            *[i for i in model.children()][:-1], 
-            nn.Flatten(), 
-            nn.Linear(512, constant['image embedding size'])            
+        super(picture, self).__init__()
+        layer = dict()
+        layer['01'] = nn.Sequential(nn.Linear(5292, 256), nn.ReLU())
+        layer['02'] = nn.Embedding(9, 256)
+        layer['03'] = nn.TransformerEncoder(
+            encoder_layer=nn.TransformerEncoderLayer(d_model=256, nhead=4), 
+            num_layers=2, 
+            norm=None
         )
-        return
-
-    def forward(self, x=None):
-
-        y = self.layer(x)
-        return(y)
-
-    pass
-
-class text(nn.Module):
-
-    def __init__(self, vocabulary=None):
-    
-        super(text, self).__init__()
-        self.vocabulary = vocabulary
-        self.layer = nn.Embedding(self.vocabulary.size, constant['text embedding size'])
-        return
-
-    def forward(self, x=None):
-
-        y = self.layer(x)        
-        return(y)
-
-# '''
-# import torch
-# '''text embedding '''
-# te = torch.randn((17, 4, 256))
-# '''image embedding'''
-# ie = torch.randn(4,256)
-
-# x = torch.cat([ie.unsqueeze(0), te], 0)
-# layer = torch.nn.GRU(input_size=256, hidden_size=256, dropout=0.1, bidirectional=False)
-# y, h = layer(x)
-# clsier = torch.nn.Linear(256, 1000)
-# clsier(y).shape
-# '''
-
-class cross(nn.Module):
-
-    def __init__(self, vocabulary=None):
-
-        super(cross, self).__init__()
-        self.vocabulary = vocabulary
-        layer = {}
-        layer['01'] = image()
-        layer['02'] = text(vocabulary=self.vocabulary)
-        layer['03'] = nn.GRU(input_size=512, hidden_size=512, dropout=0.1, bidirectional=False, num_layers=2)
-        layer['04'] = nn.Linear(512, self.vocabulary.size)
+        layer['04'] = nn.Sequential(nn.Linear(256*9, 256), nn.Tanh())
         self.layer = nn.ModuleDict(layer)
         return
 
-    def forward(self, text=None, image=None):
+    def forward(self, x=None):
 
-        value = {'text': text, 'image': image}
-        value['01'] = self.layer['01'](value['image'])
-        value['02'] = self.layer['02'](value['text'])
-        value['03'], _ = self.layer['03'](match(x=value['02'], y=value['01']))
-        value['04'] = self.layer['04'](value['03'])
-        y = value['04']
+        v = dict()
+        p, i = self.patch(x=x, block=(3,3))
+        v['01'] = self.layer['01'](p)
+        v['02'] = self.layer['02'](i)
+        v['03'] = self.layer['03'](src = v['01'] + v['02'], mask = None, src_key_padding_mask = None)
+        v['04'] = self.layer['04'](v['03'].permute(1,0,2).flatten(1))
+        y = v['04']
         return(y)
+
+    def patch(self, x=None, block=(3,3)):
+
+        heigh, width = math.floor(x.shape[2] / block[0]), math.floor(x.shape[3] / block[1])
+        p = []
+        for h in range(block[0]):
+
+            for w in range(block[1]):
+                
+                b = x[:, :, (h * heigh):((h + 1) * heigh), (w * width):((w + 1) * width)]
+                p += [b.unsqueeze(axis=0)]
+                continue
+
+            continue
+        
+        p = torch.concat(p, axis=0)
+        p = p.flatten(2)
+        'the shape of [p] is (length, batch, embedding)'
+        pass
+
+        i = []
+        for _ in range(p.shape[1]): i += [torch.arange(start=0, end=len(p), step=1).unsqueeze(dim=1)]
+        i = torch.concat(i, dim=1)
+        i = i.cuda() if(p.is_cuda) else i.cpu()
+        'the shape of [i] is (length, batch)'
+        pass
+
+        return(p, i)
+
+    def example(self):
+        
+        x = torch.randn((2, 3, 126, 126))
+        return(x)
+
+    def test(self):
+
+        x = self.example()
+        y = self.forward(x=x)
+        print(y.shape)
+        return
 
     pass
 
-class model(nn.Module):
+
+##  文本輸入神經網路模組。
+class description(nn.Module):
+
+    def __init__(self, vocabulary=None):
+    
+        super(description, self).__init__()
+        self.vocabulary = vocabulary
+        layer = dict()
+        layer['01'] = nn.Embedding(self.vocabulary.size, 256)
+        layer['02'] = nn.TransformerEncoder(
+            encoder_layer=nn.TransformerEncoderLayer(d_model=256, nhead=4), 
+            num_layers=2, 
+            norm=None
+        )
+        self.layer = nn.ModuleDict(layer)
+        return
+
+    def forward(self, x=None):
+
+        v = dict()
+        v['01'] = self.layer['01'](x)
+        v['02'] = self.layer['02'](
+            src = v['01'], 
+            mask = mask.sequence(x=x, recourse=True), 
+            src_key_padding_mask = mask.padding(x=x, value=self.vocabulary.index['<padding>'])            
+        )
+        y = v['02']        
+        return(y)
+
+    def example(self):
+
+        y = torch.randint(0,20,(7,2))
+        return(y)
+
+    def test(self):
+
+        x = self.example()
+        y = self.forward(x)
+        print(y.shape)
+        return
+
+
+##  影像與文本輸入注意力機制模組。
+class attention(nn.Module):
 
     def __init__(self, vocabulary=None):
 
-        super(model, self).__init__()
+        super(attention, self).__init__()
         self.vocabulary = vocabulary
-        layer = cross(self.vocabulary)
-        self.layer = layer
-        pass
-    
-    def forward(self, image=None, text=None, device='cpu'):
+        layer = dict()
+        layer['01'] = picture()
+        layer['02'] = description(vocabulary=self.vocabulary)
+        layer['03'] = nn.LSTM(input_size=256, hidden_size=256, num_layers=1)
+        layer['04'] = nn.Linear(256, self.vocabulary.size)
+        self.layer = nn.ModuleDict(layer)
+        return
 
-        self.layer = self.layer.to(device)
-        text = text.to(device)
-        image = image.to(device)
-        y = self.layer(text=text, image=image)
+    def forward(self, x=(None, None)):
+
+        picture, description = x
+        v = dict()
+        v['01'] = self.layer['01'](picture)
+        v['02'] = self.layer['02'](description)
+        v['02'][0,:,:] = v['02'][0,:,:] + v['01']
+        v['03'], _ = self.layer['03'](v['02'])
+        v['04'] = self.layer['04'](v['03'])
+        y = v['04']
         return(y)
 
-    def predict(self, image=None, device='cpu', limit=20):
-
-        self.layer = self.layer.to(device)
-        image = image.to(device)
-        if(len(image)!=1): return("the image dimension need (1, 3, 224, 224) shape")
-        generation = torch.full((1, 1), self.vocabulary.index['<start>'], dtype=torch.long).to(device)
-        value = {}
-        for _ in range(limit-1):
-            
-            with torch.no_grad():
-
-                value['next probability'] = self.layer(image=image, text=generation)[-1,:,:]
-                value['next prediction']  = value['next probability'].argmax(axis=1).view((1,1))
-                generation = torch.cat([generation, value['next prediction']], dim=0)
-                if(value['next prediction'] == self.vocabulary.index['<end>']): break
-                pass
-
-            pass
-
-        y = list(generation.view(-1).cpu().numpy())
-        return(y)
-    
     pass
 
 
-
-
-
-
-
-def cost(skip=None):
-
-    function = torch.nn.CrossEntropyLoss(ignore_index=skip)
-    return(function)
-
-def optimizer(model=None):
-    
-    if(model):
-        
-        function = torch.optim.Adam(model.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
-        return(function)
-
-    return
-
 class mask:
 
-    def padding(x=None, value=None):
+    def padding(x=("length", "token"), value="padding token value"):
 
         y = (x==value).transpose(0,1)
         y = y.cuda() if(x.is_cuda) else y.cpu()
         return(y)
 
-    def sequence(x, recourse=False):
+    def sequence(x=("length", "token"), recourse=False):
 
         if(not recourse):
 
@@ -172,18 +178,88 @@ class mask:
 
     pass
 
-def match(x, y):
 
-    z = torch.full(x.shape, 0)
-    z = z.cuda() if(x.is_cuda) else z.cpu()
-    length = len(x)
-    for i in range(length):
+class model(nn.Module):
 
-        z[i, :, :] = y
+    def __init__(self, vocabulary=None):
+
+        super(model, self).__init__()
+        self.vocabulary = vocabulary
+        layer = attention(vocabulary=self.vocabulary)
+        self.layer = layer
         pass
     
-    output = torch.cat([x, z], 2)
-    return(output)
+    def forward(self, x=("image", "text"), device='cpu'):
+
+        picture, description = x
+        pass
+
+        self.layer = self.layer.to(device)
+        picture = picture.to(device)
+        description = description.to(device)
+        pass
+        
+        y = self.layer(x=(picture, description))
+        return(y)
+
+    # def predict(self, image=None, device='cpu', limit=20):
+
+    #     self.layer = self.layer.to(device)
+    #     image = image.to(device)
+    #     if(len(image)!=1): return("the image dimension need (1, 3, 224, 224) shape")
+    #     generation = torch.full((1, 1), self.vocabulary.index['<start>'], dtype=torch.long).to(device)
+    #     value = {}
+    #     for _ in range(limit-1):
+            
+    #         with torch.no_grad():
+
+    #             value['next probability'] = self.layer(image=image, text=generation)[-1,:,:]
+    #             value['next prediction']  = value['next probability'].argmax(axis=1).view((1,1))
+    #             generation = torch.cat([generation, value['next prediction']], dim=0)
+    #             if(value['next prediction'] == self.vocabulary.index['<end>']): break
+    #             pass
+
+    #         pass
+
+    #     y = list(generation.view(-1).cpu().numpy())
+    #     return(y)
+    
+    # pass
+
+
+def cost(skip=None):
+
+    function = torch.nn.CrossEntropyLoss(ignore_index=skip)
+    return(function)
+
+def optimizer(model=None):
+    
+    if(model):
+        
+        function = torch.optim.Adam(model.parameters(), lr=0.0001, betas=(0.9, 0.98), eps=1e-9)
+        return(function)
+
+    return
+
+
+
+
+
+
+
+
+# def match(x, y):
+
+#     z = torch.full(x.shape, 0)
+#     z = z.cuda() if(x.is_cuda) else z.cpu()
+#     length = len(x)
+#     for i in range(length):
+
+#         z[i, :, :] = y
+#         pass
+    
+#     output = torch.cat([x, z], 2)
+#     return(output)
 
 # class mask:
 
@@ -252,23 +328,23 @@ def match(x, y):
 #         y = self.embedding(tokens.long()) * math.sqrt(self.emb_size)
 #         return(y)
         
-'''
-<image class>
-import torch
-model = torchvision.models.resnet34(True)
-layer = {}
-layer['01'] = nn.Sequential(*[i for i in model.children()][:-1], nn.Flatten())
-layer['02'] = nn.Sequential(*[i for i in layer['01'].children()][:-2], nn.Flatten(2), nn.Linear(49, 256))
-layer['03'] = nn.TransformerEncoder(
-    encoder_layer=nn.TransformerEncoderLayer(d_model=256, nhead=4),
-    num_layers=2,
-    norm=None
-)
-x = torch.randn((12, 3, 224, 224))
-value = {}
-value['01'] = layer['01'](x)
-value['02'] = layer['02'](x).permute(1,0,2)
-value['03'] = layer['03'](value['02'])
-embedding, memory = value['01'], value['03']
-memory.shape
-'''
+# '''
+# <image class>
+# import torch
+# model = torchvision.models.resnet34(True)
+# layer = {}
+# layer['01'] = nn.Sequential(*[i for i in model.children()][:-1], nn.Flatten())
+# layer['02'] = nn.Sequential(*[i for i in layer['01'].children()][:-2], nn.Flatten(2), nn.Linear(49, 256))
+# layer['03'] = nn.TransformerEncoder(
+#     encoder_layer=nn.TransformerEncoderLayer(d_model=256, nhead=4),
+#     num_layers=2,
+#     norm=None
+# )
+# x = torch.randn((12, 3, 224, 224))
+# value = {}
+# value['01'] = layer['01'](x)
+# value['02'] = layer['02'](x).permute(1,0,2)
+# value['03'] = layer['03'](value['02'])
+# embedding, memory = value['01'], value['03']
+# memory.shape
+# '''

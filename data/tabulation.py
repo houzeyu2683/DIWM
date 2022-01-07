@@ -18,20 +18,20 @@ class tabulation:
         # self.table = pandas.read_csv(self.path).sample(100).reset_index(drop=True)
         return
 
-    def split(self, test=0.2):
+    def split(self, validation=0.2):
 
-        train, test = train_test_split(self.data, test_size=test, random_state=0)
+        train, validation = train_test_split(self.data, test_size=validation, random_state=0)
         self.train  = train.copy().reset_index(drop=True)
-        self.test   = test.copy().reset_index(drop=True)
+        self.validation   = validation.copy().reset_index(drop=True)
         pass    
     
     def convert(self, what='train', to='dataset'):
 
         if(to=='dataset'):
 
-            if(what=='data'): self.train = dataset(self.data)
+            if(what=='data'): self.data = dataset(self.data)
             if(what=='train'): self.train = dataset(self.train)
-            if(what=='test'): self.train = dataset(self.test)
+            if(what=='validation'): self.validation = dataset(self.validation)
             pass
 
         return
