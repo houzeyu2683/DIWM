@@ -45,16 +45,6 @@ class loader:
             )
             pass
 
-        ##  Test loader.
-        if(name=='test'):
-
-            self.test = DataLoader(
-                dataset=dataset, batch_size=self.batch, 
-                shuffle=False , drop_last=False, 
-                collate_fn=partial(self.collect, mode='test')
-            )
-            pass
-
         return
 
     def collect(self, group, mode):

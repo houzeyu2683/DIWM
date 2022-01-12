@@ -27,6 +27,22 @@ class image(nn.Module):
             nn.Linear(784, 1024),
             nn.Sigmoid()
         )
+        layer['4'] = nn.Sequential(
+            nn.Linear(784, 1024),
+            nn.Sigmoid()
+        )
+        layer['5'] = nn.Sequential(
+            nn.Linear(784, 1024),
+            nn.Sigmoid()
+        ) 
+        layer['6'] = nn.Sequential(
+            nn.Linear(784, 1024),
+            nn.Sigmoid()
+        )
+        layer['7'] = nn.Sequential(
+            nn.Linear(784, 1024),
+            nn.Sigmoid()
+        )        
         self.layer = nn.ModuleDict(layer)
         return
 
@@ -36,7 +52,11 @@ class image(nn.Module):
         v['1'] = self.layer['1'](x).mean(1)
         v['2'] = self.layer['2'](v['1']).unsqueeze(0)
         v['3'] = self.layer['3'](v['1']).unsqueeze(0)
-        y = v['2'], v['3']
+        v['4'] = self.layer['4'](v['1']).unsqueeze(0)
+        v['5'] = self.layer['5'](v['1']).unsqueeze(0)
+        v['6'] = self.layer['6'](v['1']).unsqueeze(0)
+        v['7'] = self.layer['7'](v['1']).unsqueeze(0)
+        y = torch.cat([v['2'],v['3'],v['4']], 0), torch.cat([v['5'],v['6'],v['7']], 0)
         return(y)
 
     pass
@@ -124,9 +144,15 @@ class attention(nn.Module):
         layer['3'] = nn.LSTM(
             input_size=512,
             hidden_size=1024,
-            num_layers=1
+            num_layers=3,
+            dropout=0.1
         )
-        layer['4'] = nn.Linear(1024, size)
+        layer['4'] = nn.TransformerDecoder(
+            decoder_layer=nn.TransformerDecoderLayer(d_model=1024,nhead=4),
+            num_layers=1,
+            norm=None
+        )
+        layer['5'] = nn.Linear(1024, size)
         self.layer = nn.ModuleDict(layer)
         return
 
@@ -142,8 +168,17 @@ class attention(nn.Module):
             v['2'],
             v['1']
         )
-        v['4'] = self.layer['4'](v['3'])
-        y = v['4']
+        h = v['1'][0]
+        v['4'] = self.layer['4'](
+            tgt=v['3'], 
+            memory=h, 
+            tgt_mask = mask.sequence(x=text, recourse=True), 
+            memory_mask = None, 
+            tgt_key_padding_mask = mask.padding(x=text, value=self.vocabulary.index['<padding>']),
+            memory_key_padding_mask = None            
+        )
+        v['5'] = self.layer['5'](v['4'])
+        y = v['5']
         return(y)
 
     pass

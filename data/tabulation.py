@@ -14,16 +14,18 @@ class tabulation:
 
     def read(self):
 
-        self.data = pandas.read_csv(self.path)
-        # self.table = pandas.read_csv(self.path).sample(100).reset_index(drop=True)
+        self.data  = pandas.read_csv(self.path)
+        self.index = self.data['image'].unique().tolist()
+        self.size  = len(self.data)
         return
 
-    def split(self, validation=0.2):
+    def split(self, rate="(train, validation, test)"):
 
-        train, validation = train_test_split(self.data, test_size=validation, random_state=0)
-        self.train  = train.copy().reset_index(drop=True)
-        self.validation   = validation.copy().reset_index(drop=True)
-        pass    
+        train, validation, test = slice(index=self.index, train=rate[0], validation=rate[1], test=rate[2])
+        self.train = self.data.loc[[i in train for i in self.data['image']]].copy().reset_index(drop=True)
+        self.validation = self.data.loc[[i in validation for i in self.data['image']]].copy().reset_index(drop=True)
+        self.test = self.data.loc[[i in test for i in self.data['image']]].copy().reset_index(drop=True)
+        return
     
     def convert(self, what='train', to='dataset'):
 
@@ -32,6 +34,7 @@ class tabulation:
             if(what=='data'): self.data = dataset(self.data)
             if(what=='train'): self.train = dataset(self.train)
             if(what=='validation'): self.validation = dataset(self.validation)
+            if(what=='test'): self.test = dataset(self.test)
             pass
 
         return
@@ -59,38 +62,20 @@ class dataset(torch.utils.data.Dataset):
     pass
 
 
+def slice(index=None, train=0.8, validation=0.0, test=0.2):
 
-    # def split(self, train=0.8, validation=0.2, test=0, target=None):
+    assert index!=None
+    assert train+validation+test == 1
+    i = dict()
+    i['train'], i['other'] = train_test_split(
+        index, 
+        test_size=(validation + test), 
+        random_state=0
+    )
+    i['validation'], i['test'] = train_test_split(
+        i['other'], 
+        test_size=test / (validation+test), 
+        random_state=0
+    )
+    return(i['train'], i['validation'], i['test'])
 
-    #     cache = {}
-    #     cache['table'] = self.table.copy()
-    #     cache['table']['<index>'] = range(len(cache['table']))
-    #     pass
-
-    #     ##  Split train from table.
-    #     train = train / (train+validation+test)
-    #     cache['train'], _ = train_test_split(
-    #         cache['table'], train_size=train, random_state=0, shuffle=True, stratify=target
-    #     )
-    #     cache['table'] = cache['table'].loc[[i not in cache['train']['<index>'] for i in cache['table']['<index>']]].copy()
-    #     pass
-
-    #     ##  Split validation from table.
-    #     validation = validation / (validation+test)
-    #     cache['validation'], _ = train_test_split(
-    #         cache['table'], train_size=validation, random_state=0, shuffle=True, stratify=target
-    #     )
-    #     cache['table'] = cache['table'].loc[[i not in cache['validation']['<index>'] for i in cache['table']['<index>']]].copy()
-    #     pass
-
-    #     ##  Split test from table.
-    #     cache['test'] = cache['table']
-    #     cache['table'] = cache['table'].loc[[i not in cache['test']['<index>'] for i in cache['table']['<index>']]].copy()
-    #     pass
-
-    #     self.train      = dataset(cache['train'])
-    #     self.validation = dataset(cache['validation'])
-    #     self.test       = dataset(cache['test'])
-    #     return
-
-    # pass

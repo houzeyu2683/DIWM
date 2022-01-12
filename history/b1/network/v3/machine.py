@@ -9,8 +9,8 @@ import pandas
 import plotly.graph_objects as go
 import nltk
 from nltk.translate.bleu_score import corpus_bleu
-
-
+# s = corpus_bleu(list_of_references=[[[12,32,44,13], [12,32,22,13]]], hypotheses=[[12,32,44,13]])
+# round(s)
 track = {
     "epoch":[],
     'train loss':[],
@@ -98,51 +98,51 @@ class machine:
         self.track['validation loss'] += [numpy.array(iteration['validation loss']).mean()]
         return
 
-    def evaluate(self, loader):
+    def evaluate(self, loader, name):
 
         self.model = self.model.to(self.device)
         self.model.eval()
         pass
         
         progress = tqdm.tqdm(loader, leave=False)
-        iteration = {'image':[], "target":[], "prediction":[]}
+        iteration = {"target":[], "prediction":[]}
         for index, batch in enumerate(progress, 0):
             
+            batch['item'] = batch['item']
             with torch.no_grad():
 
-                x = batch['image'].to(self.device)
-                prediction = self.model.predict(
-                    x=x, 
-                    device=self.device, 
-                    limit=50
-                )
-                target = batch['text'].squeeze().tolist()
-                pass
-
-                if(batch['item']['image'].item() not in iteration['image']): 
+                if((index%5)==0): 
                     
-                    iteration['image'] += [batch['item']['image'].item()]
-                    iteration['target'] += [[target]]
-                    iteration['prediction'] += [prediction]
+                    x = batch['image'][0:1,:, :, :].to(self.device)
+                    prediction = self.model.predict(
+                        x=x, 
+                        device=self.device, 
+                        limit=20
+                    )
+                    target = []
+                    target += [batch['text'][:,0].tolist()]
                     pass
                 
                 else:
 
-                    index = iteration['image'].index(batch['item']['image'].item())
-                    iteration['target'][index] += [target]
+                    target += [batch['text'][:,0].tolist()]
                     pass
+
+                pass
+            
+            collection = ((index+1)%5)==0
+            if(collection): 
                 
+                iteration['target'] += [target]
+                iteration['prediction'] +=[prediction]
                 pass
 
             pass
         
-        # return(iteration)
-        score = []
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(1, 0, 0, 0)), 3)]
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.5, 0.5, 0, 0)), 3)]
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.33, 0.33, 0.33, 0)), 3)]
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.25, 0.25, 0.25, 0.25)), 3)]  
-        return(score)
+        return(iteration)
+        score = round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction']), 3)
+        print('the gleu score {}'.format(score))
+        return
 
 # s = corpus_bleu(list_of_references=[[[12,32,44,13], [12,32,22,13]], [[1,2,3,5], [5,4,3,2,1]]], hypotheses=[[12,32,44,13], [1,2,3,4,5]])
 # round(s,3)

@@ -12,7 +12,7 @@ tabulation.convert(what='test', to='dataset')
 vocabulary = data.vocabulary()
 vocabulary.build(sentence=tabulation.data['text'])
 
-loader = data.loader(batch=64, vocabulary=vocabulary)
+loader = data.loader(batch=32, vocabulary=vocabulary)
 loader.define(dataset=tabulation.train, name='train')
 loader.define(dataset=tabulation.validation, name='validation')
 loader.define(dataset=tabulation.test, name='test')
@@ -20,15 +20,15 @@ loader.define(dataset=tabulation.test, name='test')
 
 import network
  
-model = network.v1.model(vocabulary=vocabulary)
+model = network.v2.model(vocabulary=vocabulary)
 # x = next(iter(loader.train))['image'], next(iter(loader.train))['text']
 # model.forward(x=x).shape
 
-cost = network.v1.cost()
-optimizer = network.v1.optimizer(model=model)
-machine = network.v1.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v1)/', checkpoint=0)
+cost = network.v2.cost()
+optimizer = network.v2.optimizer(model=model)
+machine = network.v2.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v2)/', checkpoint=0)
 
-epoch = 15
+epoch = 20
 for e in range(epoch):
 
     machine.learn(train=loader.train, validation=loader.validation)
