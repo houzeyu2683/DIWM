@@ -17,7 +17,6 @@ track = {
     "validation loss": []
 }
 
-
 class machine:
 
     def __init__(self, model=None, optimizer=None, cost=None, device='cpu', folder='log', checkpoint=0):
@@ -136,13 +135,12 @@ class machine:
 
             pass
         
-        # return(iteration)
-        score = []
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(1, 0, 0, 0)), 3)]
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.5, 0.5, 0, 0)), 3)]
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.33, 0.33, 0.33, 0)), 3)]
-        score += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.25, 0.25, 0.25, 0.25)), 3)]  
-        return(score)
+        bleu = []
+        bleu += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(1, 0, 0, 0)), 3)]
+        bleu += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.5, 0.5, 0, 0)), 3)]
+        bleu += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.33, 0.33, 0.33, 0)), 3)]
+        bleu += [round(corpus_bleu(iteration['target'], hypotheses=iteration['prediction'], weights=(0.25, 0.25, 0.25, 0.25)), 3)]  
+        return(bleu)
 
 # s = corpus_bleu(list_of_references=[[[12,32,44,13], [12,32,22,13]], [[1,2,3,5], [5,4,3,2,1]]], hypotheses=[[12,32,44,13], [1,2,3,4,5]])
 # round(s,3)

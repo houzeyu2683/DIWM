@@ -23,16 +23,14 @@ import network
 model = network.v1.model(vocabulary=vocabulary)
 # x = next(iter(loader.train))['image'], next(iter(loader.train))['text']
 # model.forward(x=x).shape
-
 cost = network.v1.cost()
 optimizer = network.v1.optimizer(model=model)
 machine = network.v1.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v1)/', checkpoint=0)
 
-epoch = 15
+epoch = 20
 for e in range(epoch):
 
     machine.learn(train=loader.train, validation=loader.validation)
-    # machine.evaluate(train=loader.train, validation=loader.validation)
     machine.save(what='history')
     if(e==0 or e==epoch-1 or e%1==0): machine.save(what='checkpoint')
     machine.update(what='checkpoint')
