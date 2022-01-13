@@ -19,12 +19,12 @@ loader.define(dataset=tabulation.test, name='test')
 
 import network
  
-model = network.v5.model(vocabulary=vocabulary)
-cost = network.v5.cost(skip=-100)
-optimizer = network.v5.optimizer(model=model)
-machine = network.v5.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v4)/', checkpoint=0)
+model = network.v3.model(vocabulary=vocabulary)
+cost = network.v3.cost(skip=-100)
+optimizer = network.v3.optimizer(model=model)
+machine = network.v3.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v3)/', checkpoint=0)
 
-machine.load(path='log(v5-1)/model-14.checkpoint', what='model')
+machine.load(path='log(v3)/model-10.checkpoint', what='model')
 evaluation = dict()
 evaluation['validation bleu score'] = machine.evaluate(loader=loader.validation)
 evaluation['test bleu score'] = machine.evaluate(loader=loader.test)

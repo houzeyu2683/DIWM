@@ -20,12 +20,12 @@ loader.define(dataset=tabulation.test, name='test')
 
 import network
  
-model = network.v1.model(vocabulary=vocabulary)
+model = network.v3.model(vocabulary=vocabulary)
 # x = next(iter(loader.train))['image'], next(iter(loader.train))['text']
 # model.forward(x=x).shape
-cost = network.v1.cost()
-optimizer = network.v1.optimizer(model=model)
-machine = network.v1.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v1)/', checkpoint=0)
+cost = network.v3.cost()
+optimizer = network.v3.optimizer(model=model)
+machine = network.v3.machine(model=model, optimizer=optimizer, cost=cost, device='cuda', folder='log(v3)/', checkpoint=0)
 
 epoch = 20
 for e in range(epoch):
